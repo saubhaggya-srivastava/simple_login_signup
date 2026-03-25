@@ -1,0 +1,29 @@
+.env
+.env.*
+
+# Keep example env committed
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.eggs/
+*.log
+
+# Virtual environments
+venv/
+.venv/
+
+# Editors/IDE
+.vscode/
+.idea/
+
+# Build artifacts
+build/
+dist/
+
+# OS
+Thumbs.db
+Desktop.ini
+
