@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from db.database import get_db
 from models.user import User
-from schemas.user import UserSignup, UserLogin, ForgotPassword, MessageResponse
+from schemas.user import UserSignup, UserLogin, ForgotPassword, MessageResponse, LoginResponse
 
 router = APIRouter(tags=["Authentication"])
 
@@ -31,7 +31,7 @@ def signup(payload: UserSignup, db: Session = Depends(get_db)) -> MessageRespons
 
 @router.post(
     "/login",
-    response_model=MessageResponse,
+    response_model=LoginResponse,
     status_code=status.HTTP_200_OK,
 )
 def login(payload: UserLogin, db: Session = Depends(get_db)) -> MessageResponse:
@@ -42,7 +42,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> MessageResponse:
             detail="Invalid email or password",
         )
 
-    return MessageResponse(message="Login successful")
+    return LoginResponse(message="Login successful", id=user.id)
 
 
 @router.put(
