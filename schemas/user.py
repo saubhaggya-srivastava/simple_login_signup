@@ -18,3 +18,7 @@ class ForgotPassword(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+class LoginResponse(BaseModel):
+    message : str
+    id : int 
