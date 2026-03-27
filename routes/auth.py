@@ -12,6 +12,12 @@ router = APIRouter(tags=["Authentication"])
     "/signup",
     response_model=MessageResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Register a new user",
+    description="Creates a new user account if the email address is not already registered.",
+    responses={
+        201: {"description": "User registered successfully."},
+        400: {"description": "Email already exists."},
+    },
 )
 def signup(payload: UserSignup, db: Session = Depends(get_db)) -> MessageResponse:
     existing_user = db.query(User).filter(User.email == payload.email).first()
@@ -33,6 +39,12 @@ def signup(payload: UserSignup, db: Session = Depends(get_db)) -> MessageRespons
     "/login",
     response_model=LoginResponse,
     status_code=status.HTTP_200_OK,
+    summary="Authenticate a user",
+    description="Validates email and password and returns a basic login success response.",
+    responses={
+        200: {"description": "Login successful."},
+        401: {"description": "Invalid email or password."},
+    },
 )
 def login(payload: UserLogin, db: Session = Depends(get_db)) -> MessageResponse:
     user = db.query(User).filter(User.email == payload.email).first()
@@ -49,6 +61,12 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> MessageResponse:
     "/forgot-password",
     response_model=MessageResponse,
     status_code=status.HTTP_200_OK,
+    summary="Reset a user's password",
+    description="Updates the password for an existing user identified by email.",
+    responses={
+        200: {"description": "Password updated successfully."},
+        404: {"description": "User not found."},
+    },
 )
 def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)) -> MessageResponse:
     user = db.query(User).filter(User.email == payload.email).first()

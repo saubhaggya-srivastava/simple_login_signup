@@ -3,16 +3,36 @@ from fastapi import FastAPI
 import models
 from db.database import engine, Base
 from routes.auth import router as auth_router
+from routes.sku import router as sku_router
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Simple Login & Signup API",
-    description="A minimal user authentication module with PostgreSQL",
+    description=(
+        "FastAPI service for authentication and SKU master APIs.\n\n"
+        "Available docs:\n"
+        "- Swagger UI: `/docs`\n"
+        "- ReDoc: `/redoc`\n\n"
+        "SKU APIs support search, exact-match filters, multi-select filters, "
+        "range filters, sorting, pagination, and cascading filter dropdown options."
+    ),
     version="1.0.0",
+    openapi_tags=[
+        {"name": "Health", "description": "Basic health-check endpoint."},
+        {"name": "Authentication", "description": "User signup, login, and password reset APIs."},
+        {
+            "name": "SKU",
+            "description": (
+                "SKU master APIs for listing, searching, filtering, sorting, pagination, "
+                "and fetching dropdown filter options."
+            ),
+        },
+    ],
 )
 
 app.include_router(auth_router)
+app.include_router(sku_router)
 
 
 @app.get("/", tags=["Health"])
