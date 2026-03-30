@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from utils.security import hash_password, verify_password
 from db.database import get_db
 from models.user import User
 from schemas.user import UserSignup, UserLogin, ForgotPassword, MessageResponse, LoginResponse
@@ -26,8 +27,9 @@ def signup(payload: UserSignup, db: Session = Depends(get_db)) -> MessageRespons
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-
-    new_user = User(email=payload.email, password=payload.password)
+    
+    hashed_password = hash_password(payload.password)
+    new_user = User(email=payload.email, password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -48,7 +50,7 @@ def signup(payload: UserSignup, db: Session = Depends(get_db)) -> MessageRespons
 )
 def login(payload: UserLogin, db: Session = Depends(get_db)) -> MessageResponse:
     user = db.query(User).filter(User.email == payload.email).first()
-    if not user or user.password != payload.password:
+    if not user or not verify_password(payload.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -76,7 +78,7 @@ def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)) -> M
             detail="User not found",
         )
 
-    user.password = payload.new_password
+    user.password = hash_password(payload.new_password)
     db.commit()
 
     return MessageResponse(message="Password updated successfully")
