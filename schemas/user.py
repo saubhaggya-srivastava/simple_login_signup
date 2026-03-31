@@ -57,12 +57,33 @@ class MessageResponse(BaseModel):
 class LoginResponse(BaseModel):
     message: str = Field(..., examples=["Login successful"])
     id: int = Field(..., examples=[1])
+    access_token: str = Field(
+        ...,
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.payload.signature"],
+    )
+    token_type: str = Field(..., examples=["bearer"])
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "message": "Login successful",
                 "id": 1,
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.payload.signature",
+                "token_type": "bearer",
+            }
+        }
+    }
+
+
+class CurrentUserResponse(BaseModel):
+    id: int = Field(..., examples=[1])
+    email: EmailStr = Field(..., examples=["user@example.com"])
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "id": 1,
+                "email": "user@example.com",
             }
         }
     }

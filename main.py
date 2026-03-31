@@ -16,13 +16,18 @@ app = FastAPI(
         "Available docs:\n"
         "- Swagger UI: `/docs`\n"
         "- ReDoc: `/redoc`\n\n"
+        "Authentication uses Argon2 password hashing and JWT cookies. "
+        "The login endpoint also returns the JWT in the response body so it is visible in Swagger.\n\n"
         "SKU, Store, and MSL APIs support search, exact-match filters, "
         "sorting, pagination, and cascading filter dropdown options."
     ),
     version="1.0.0",
     openapi_tags=[
         {"name": "Health", "description": "Basic health-check endpoint."},
-        {"name": "Authentication", "description": "User signup, login, and password reset APIs."},
+        {
+            "name": "Authentication",
+            "description": "User signup, login, logout, password reset, and current-user APIs using JWT cookies.",
+        },
         {
             "name": "SKU",
             "description": (
