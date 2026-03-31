@@ -9,6 +9,9 @@ simple_login_signup/
 ├── main.py                 # Application entry point
 ├── requirements.txt        # Python dependencies
 ├── .env                    # Environment variables
+├── controllers/
+│   ├── __init__.py
+│   └── auth_controller.py  # Authentication business logic
 ├── db/
 │   ├── __init__.py
 │   └── database.py         # Engine, session factory, Base
@@ -18,9 +21,12 @@ simple_login_signup/
 ├── schemas/
 │   ├── __init__.py
 │   └── user.py             # Pydantic request/response schemas
-└── routes/
+├── routes/
+│   ├── __init__.py
+│   └── auth.py             # Authentication endpoints
+└── utils/
     ├── __init__.py
-    └── auth.py             # /signup, /login, /forgot-password
+    └── security.py         # Password hashing and JWT helpers
 ```
 
 ## Setup
@@ -50,6 +56,9 @@ Edit `.env` and set your PostgreSQL connection string:
 
 ```
 DATABASE_URL=postgresql+psycopg://postgres:your_password@localhost:5432/simple_login_db
+JWT_SECRET_KEY=put_a_long_random_secret_here
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
 Make sure the database `simple_login_db` exists:
@@ -75,7 +84,15 @@ The API will be available at **http://127.0.0.1:8000**
 
 | Method | Endpoint            | Description          |
 |--------|---------------------|----------------------|
-| POST   | `/signup`           | Register a new user  |
-| POST   | `/login`            | Login with email/pwd |
-| PUT    | `/forgot-password`  | Update password      |
-| GET    | `/`                 | Health check         |
+| POST   | `/signup`           | Register a new user                              |
+| POST   | `/login`            | Login and set JWT auth cookie                    |
+| POST   | `/logout`           | Clear JWT auth cookie                            |
+| GET    | `/me`               | Get the current authenticated user from cookie   |
+| PUT    | `/forgot-password`  | Update password                                  |
+| GET    | `/`                 | Health check                                     |
+
+## Authentication Notes
+
+- Passwords are hashed using Argon2 via `pwdlib`.
+- Successful login stores a JWT access token in an HttpOnly cookie named `access_token`.
+- Set the cookie `secure` flag to `True` when deploying the app behind HTTPS in production.
