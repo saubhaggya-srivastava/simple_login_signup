@@ -3,6 +3,7 @@ from fastapi import FastAPI
 import models
 from db.database import engine, Base
 from routes.auth import router as auth_router
+from routes.form import router as form_router
 from routes.msl_list import router as msl_list_router
 from routes.sku import router as sku_router
 from routes.store import router as store_router
@@ -49,10 +50,15 @@ app = FastAPI(
                 "and fetching dropdown filter options."
             ),
         },
+        {
+            "name": "Forms",
+            "description": "Form submission status APIs with submission limit checks.",
+        },
     ],
 )
 
 app.include_router(auth_router)
+app.include_router(form_router)
 app.include_router(msl_list_router)
 app.include_router(sku_router)
 app.include_router(store_router)
