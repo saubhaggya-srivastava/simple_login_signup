@@ -11,7 +11,10 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 import models  # noqa: F401
 from db.database import Base
 from db.form_submission_repository import create_submission
-from models.form_submission import FormConfig
+from models.channel import Channel
+from models.form_master import FormMaster
+from models.form_submission import ChannelFormConfig
+from models.user import User
 from services.form_submission_service import can_submit, get_remaining_submissions
 
 
@@ -36,9 +39,23 @@ class FormSubmissionLimitTests(unittest.TestCase):
         self.db.close()
         self.engine.dispose()
 
-    def _add_form_config(self, form_id: int, limit_count: int, limit_type: str) -> None:
+    def _add_channel_and_form(self, channel_id: int, form_id: int) -> None:
+        self.db.add(Channel(id=channel_id, name=f"Channel {channel_id}"))
+        self.db.add(FormMaster(id=form_id, name=f"Form {form_id}"))
+        self.db.add(User(id=1, email="tester@example.com", password="hashed-password"))
+        self.db.commit()
+
+    def _add_form_config(
+        self,
+        channel_id: int,
+        form_id: int,
+        limit_count: int,
+        limit_type: str,
+    ) -> None:
+        self._add_channel_and_form(channel_id, form_id)
         self.db.add(
-            FormConfig(
+            ChannelFormConfig(
+                channel_id=channel_id,
                 form_id=form_id,
                 limit_count=limit_count,
                 limit_type=limit_type,
@@ -54,59 +71,62 @@ class FormSubmissionLimitTests(unittest.TestCase):
         )
 
     def test_weekly_limit_blocks_third_submission_in_same_window(self) -> None:
-        self._add_form_config(form_id=101, limit_count=2, limit_type="weekly")
+        channel_id = 1
+        self._add_form_config(channel_id=channel_id, form_id=101, limit_count=2, limit_type="weekly")
         user_id = 1
         fixed_now = datetime(2026, 3, 3, 10, 0, tzinfo=timezone.utc)
 
         patch_window, patch_repo = self._patch_current_time(fixed_now)
         with patch_window, patch_repo:
-            self.assertTrue(can_submit(self.db, user_id, 101))
-            create_submission(self.db, user_id, 101)
+            self.assertTrue(can_submit(self.db, channel_id, 101))
+            create_submission(self.db, channel_id, 101, user_id)
 
-            self.assertTrue(can_submit(self.db, user_id, 101))
-            create_submission(self.db, user_id, 101)
+            self.assertTrue(can_submit(self.db, channel_id, 101))
+            create_submission(self.db, channel_id, 101, user_id)
 
-            self.assertFalse(can_submit(self.db, user_id, 101))
-            self.assertEqual(get_remaining_submissions(self.db, user_id, 101), 0)
+            self.assertFalse(can_submit(self.db, channel_id, 101))
+            self.assertEqual(get_remaining_submissions(self.db, channel_id, 101), 0)
 
     def test_weekly_limit_resets_on_next_seven_day_bucket(self) -> None:
-        self._add_form_config(form_id=102, limit_count=2, limit_type="weekly")
+        channel_id = 1
+        self._add_form_config(channel_id=channel_id, form_id=102, limit_count=2, limit_type="weekly")
         user_id = 1
 
         patch_window, patch_repo = self._patch_current_time(
             datetime(2026, 3, 3, 10, 0, tzinfo=timezone.utc)
         )
         with patch_window, patch_repo:
-            create_submission(self.db, user_id, 102)
-            create_submission(self.db, user_id, 102)
-            self.assertFalse(can_submit(self.db, user_id, 102))
+            create_submission(self.db, channel_id, 102, user_id)
+            create_submission(self.db, channel_id, 102, user_id)
+            self.assertFalse(can_submit(self.db, channel_id, 102))
 
         patch_window, patch_repo = self._patch_current_time(
             datetime(2026, 3, 8, 10, 0, tzinfo=timezone.utc)
         )
         with patch_window, patch_repo:
-            self.assertTrue(can_submit(self.db, user_id, 102))
-            self.assertEqual(get_remaining_submissions(self.db, user_id, 102), 2)
+            self.assertTrue(can_submit(self.db, channel_id, 102))
+            self.assertEqual(get_remaining_submissions(self.db, channel_id, 102), 2)
 
     def test_monthly_limit_resets_on_next_month(self) -> None:
-        self._add_form_config(form_id=103, limit_count=2, limit_type="monthly")
+        channel_id = 1
+        self._add_form_config(channel_id=channel_id, form_id=103, limit_count=2, limit_type="monthly")
         user_id = 1
 
         patch_window, patch_repo = self._patch_current_time(
             datetime(2026, 3, 20, 10, 0, tzinfo=timezone.utc)
         )
         with patch_window, patch_repo:
-            create_submission(self.db, user_id, 103)
-            create_submission(self.db, user_id, 103)
-            self.assertFalse(can_submit(self.db, user_id, 103))
-            self.assertEqual(get_remaining_submissions(self.db, user_id, 103), 0)
+            create_submission(self.db, channel_id, 103, user_id)
+            create_submission(self.db, channel_id, 103, user_id)
+            self.assertFalse(can_submit(self.db, channel_id, 103))
+            self.assertEqual(get_remaining_submissions(self.db, channel_id, 103), 0)
 
         patch_window, patch_repo = self._patch_current_time(
             datetime(2026, 4, 1, 0, 0, tzinfo=timezone.utc)
         )
         with patch_window, patch_repo:
-            self.assertTrue(can_submit(self.db, user_id, 103))
-            self.assertEqual(get_remaining_submissions(self.db, user_id, 103), 2)
+            self.assertTrue(can_submit(self.db, channel_id, 103))
+            self.assertEqual(get_remaining_submissions(self.db, channel_id, 103), 2)
 
 
 if __name__ == "__main__":

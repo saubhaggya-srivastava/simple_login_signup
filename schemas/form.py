@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from schemas.form_schema import BaseFormSchema
 
 
 class SubmitSuccessResponse(BaseModel):
@@ -10,7 +12,13 @@ class SubmitErrorResponse(BaseModel):
     message: str
 
 
-class FormSubmissionDataPayload(BaseModel):
-    name: str | None = None
-    value: int | None = None
-    remarks: str | None = None
+class FormStatusResponse(BaseModel):
+    allowed: bool
+    remaining: int
+    limit: int
+    message: str
+
+
+class FormSubmitRequest(BaseModel):
+    channel_id: int = Field(description="Channel id for the form submission.", example=1)
+    data: BaseFormSchema
